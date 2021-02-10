@@ -23,7 +23,7 @@ function mystart() {
     
     var editor = CodeMirror(document.body, {
         value: "speed:\n"
-               + "- if: road_class == MOTORWAY\n"
+               + "- if: road<--click ctrl+space here\n"
                + "  multiply by: 0.8\n"
                + "- else: \n"
                + "  limit to: 0.5\n",
@@ -32,11 +32,4 @@ function mystart() {
         extraKeys: {"Ctrl-Space": "autocomplete"},
         lineNumbers: true
     });
-    
-//    editor.showHint({
-//        hint: function(token, context) {
-//            alert(context.className);
-//            return { list: [token, "test", "pest"] };
-//        }
-//    });
 }

@@ -35,30 +35,37 @@
         var cur = editor.getCursor(), token = editor.getTokenAt(cur);
         var innerMode = CodeMirror.innerMode(editor.getMode(), token.state);
 
-        var context = {};
+        var tokens = [];
 
         var line = editor.getLine(cur.line);
         var start = 0;
         var hasIf = false;
         var token;
-        console.log(line);
         for (var i = 0; i <= line.length; i++) {
+
             if (i === cur.ch) {
-                token = {start: start, end: cur.ch, string: line.substring(start, i), type: (hasIf ? "encoded_value" : null)};
+                var lastValue = line.substring(start, i);
+                if (lastValue)
+                    tokens.push(lastValue);
+                token = {start: start, end: cur.ch, string: lastValue, type: (hasIf ? "encoded_value" : null)};
                 break;
             }
 
             if (line.charAt(i) === ":") {
                 var tmp = line.substring(start, i);
                 hasIf = tmp === "if" || tmp === "else if";
+                tokens.push(line.substring(start, i));
+                start = i;
 
-            } else if (line.charAt(i) === " ")
+            } else if (line.charAt(i) === " ") {
+                tokens.push(line.substring(start, i));
                 start = i + 1;
+            }
         }
-        console.log(token);
+        console.log(tokens);
         token.state = innerMode.state;
 
-        return {list: getCompletions(token, context),
+        return {list: getCompletions(token, tokens),
             from: Pos(cur.line, token.start),
             to: Pos(cur.line, token.end)};
     }
@@ -77,17 +84,26 @@
         "toll": ["NO", "ALL", "HGV"]
     };
 
-    function getCompletions(token, context) {
+    function getCompletions(token, tokens) {
         var keywords = ["if", "else", "else if", "multiply by", "limit to"];
         var found = [], start = token.string;
+        console.log(token.string);
         function maybeAdd(str) {
             if (str.lastIndexOf(start, 0) == 0 && !arrayContains(found, str))
                 found.push(str);
         }
 
-//        if (context && context.length) {
-//
-//        }
+        if (tokens.length > 1) {
+            var values = encodedValues[tokens[tokens.length - 2]];
+            if(!values && tokens.length > 2)
+                values = encodedValues[tokens[tokens.length - 3]];
+            if (values && values.length > 0) {
+                for (var i = 0; i < values.length; i++) {
+                    maybeAdd(values[i]);
+                }
+                return found;
+            }
+        }
 
         if (token.type === "encoded_value") {
             var keys = Object.keys(encodedValues);
