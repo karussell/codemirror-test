@@ -35,65 +35,28 @@
         var cur = editor.getCursor(), token = editor.getTokenAt(cur);
         var innerMode = CodeMirror.innerMode(editor.getMode(), token.state);
 
-        var tokens = [], context = {};
-        // TODO build yaml tree from lines until cursor
-        for (var lineNo = 0; lineNo <= cur.line; lineNo++) {
-            var lineStr;
-            if (lineNo == cur.line) {
-                lineStr = editor.getLine(lineNo).substring(0, cur.ch);
-            } else {
-                lineStr = editor.getLine(lineNo);
-            }
-
-            var stream = new CodeMirror.StringStream(lineStr, 1, {});
-            var state = {};
-            while (true) {
-                var start = stream.pos;
-                var res = mode.token(stream, state);
-                // do not trim value as whitespace is significant in YAML
-                if (res == null) {
-                    var value = lineStr.substring(start, cur.ch);
-                    tokens.push({type: "newline", value: value});
-                    break;
-                }
-                var value = lineStr.substring(start, stream.pos);
-                tokens.push({type: res, value: value});
-            }
-        }
-        console.log(tokens);
-        // console.log(parseObject(tokens, 0));
+        var context = {};
 
         var line = editor.getLine(cur.line);
         var start = 0;
         var hasIf = false;
-        for (var i = 0; i < line.length; i++) {
+        var token;
+        console.log(line);
+        for (var i = 0; i <= line.length; i++) {
             if (i === cur.ch) {
                 token = {start: start, end: cur.ch, string: line.substring(start, i), type: (hasIf ? "encoded_value" : null)};
                 break;
             }
 
             if (line.charAt(i) === ":") {
-                var token = line.substring(start, i);
-                hasIf = token === "if" || token === "else if";
-            }
+                var tmp = line.substring(start, i);
+                hasIf = tmp === "if" || tmp === "else if";
 
-            if (line.charAt(i) === " ")
+            } else if (line.charAt(i) === " ")
                 start = i + 1;
         }
-
-        token.state = innerMode.state;
         console.log(token);
-
-        // If it's not a 'word-style' token, ignore the token.
-//        if (!/^[\w$_]*$/.test(token.string)) {
-//            token = {start: cur.ch, end: cur.ch, string: "", state: token.state,
-//                type: token.string == "." ? "property" : null};
-//        } else if (token.end > cur.ch) {
-//            token.end = cur.ch;
-//            token.string = token.string.slice(0, cur.ch - token.start);
-//        }
-
-//        var tprop = token;
+        token.state = innerMode.state;
 
         return {list: getCompletions(token, context),
             from: Pos(cur.line, token.start),
@@ -104,31 +67,6 @@
         return scriptHint(editor);
     });
 
-    // TODO
-    var hierarchicalHints = {
-        "_type": "object",
-        /* + priority */
-        "speed": {"_type": "array",
-            "inner_type": {
-                "_type": "object",
-                "if": {
-                    "_type": "string"
-                },
-                "else if": {
-                    "_type": "string"
-                },
-                "else": {
-                    "_type": "string"
-                },
-                "limit to": {
-                    "_type": "number"
-                },
-                "multiply by": {
-                    "_type": "number"
-                }
-            }
-        }
-    };
     var encodedValues = {
         "max_speed": ["<number>"],
         "road_class": ["OTHER", "MOTORWAY", "TRUNK", "PRIMARY", "SECONDARY", "TERTIARY", "RESIDENTIAL", "UNCLASSIFIED", "SERVICE", "ROAD", "TRACK", "BRIDLEWAY", "STEPS", "CYCLEWAY", "PATH", "LIVING_STREET", "FOOTWAY", "PEDESTRIAN", "PLATFORM", "CORRIDOR"],
@@ -147,9 +85,9 @@
                 found.push(str);
         }
 
-        if (context && context.length) {
-
-        }
+//        if (context && context.length) {
+//
+//        }
 
         if (token.type === "encoded_value") {
             var keys = Object.keys(encodedValues);
